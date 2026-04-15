@@ -1,0 +1,23 @@
+{
+  "name": "engine",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc -b"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@repo/redis": "*",
+    "@types/node": "^25.6.0",
+    "tsx": "^4.21.0"
+  },
+  "dependencies": {
+    "ioredis": "^5.10.1"
+  }
+}
