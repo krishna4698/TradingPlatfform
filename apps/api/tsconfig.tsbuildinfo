@@ -1,1 +1,1 @@
-{"root":["./src/index.ts"],"version":"5.9.2"}
+{"root":["./src/index.ts","./src/controllers/trade.controller.ts","./src/routes/trade.route.ts","./src/schema/trade.type.ts"],"version":"5.9.2"}
