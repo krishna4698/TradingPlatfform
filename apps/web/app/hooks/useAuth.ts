@@ -1,5 +1,8 @@
 import axios from "axios";
+import { useRouter } from "next/router";
 import toast from "react-hot-toast";
+
+
 
 export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
 
@@ -64,3 +67,18 @@ export const getCurrentUser = async () => {
 
   return response.data.user;
 };
+
+
+
+export const logout=async  ()=>{
+  // const router=useRouter();
+      const result = await axios.post(`${API_URL}/auth/logout`, {}, {withCredentials:true})
+      if(result.status==401){
+          return false;
+      }
+      else if(result.status==200){
+        return true;
+        
+      }
+
+}
