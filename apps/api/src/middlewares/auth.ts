@@ -13,7 +13,14 @@ declare module "express-serve-static-core" {
 
 const authMiddleware= (req:Request, res:Response, next:NextFunction)=>{
     try{
-       const token= req.headers.authorization
+       const token =
+        req.headers.authorization ??
+        req.headers.cookie
+          ?.split(";")
+          .map((cookie) => cookie.trim())
+          .find((cookie) => cookie.startsWith("token="))
+          ?.split("=")[1];
+
    if(!token) return res.status(401).json({message:"unauthorized"})
 
     const decoded= jwt.verify(token, "secret") as any
