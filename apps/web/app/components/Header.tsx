@@ -37,7 +37,7 @@ async function handleLogout(){
       <div className="market-shell flex items-center justify-between px-3 py-3">
         <Link href="/" className="group flex items-center gap-3" onClick={closeMenu}>
           <span className="grid h-10 w-10 place-items-center bg-[var(--lime)] text-sm font-black text-black">
-            100X
+            1000X
           </span>
           <span className="leading-none">
             <span className="mono-face block text-[0.64rem] uppercase tracking-[0.2em] text-stone-500">

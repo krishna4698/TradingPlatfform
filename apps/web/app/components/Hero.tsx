@@ -10,7 +10,7 @@ export default function Hero() {
   return (
     <section className="mx-auto grid min-h-[calc(100vh-88px)] w-full max-w-7xl gap-8 px-4 py-12 sm:px-6 lg:grid-cols-[0.92fr_1.08fr] lg:px-8">
       <div className="rise-in flex flex-col justify-center">
-        <p className="micro-label">100X Trading</p>
+        <p className="micro-label">1000X Trading - 100X is not enough</p>
         <h1 className="display-face mt-5 max-w-3xl text-5xl leading-[0.92] text-white sm:text-6xl lg:text-[6.8rem]">
           Built for decisive market moves.
         </h1>
