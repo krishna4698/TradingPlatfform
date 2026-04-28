@@ -24,9 +24,6 @@ export const getBalance= async (req:Request, res:Response)=>{
   
 
 export const deposit=async (req:Request, res:Response)=>{
-     
-
-  
     try{
         const user = req.user!;
         console.log(user, "this is user id")
@@ -37,6 +34,7 @@ export const deposit=async (req:Request, res:Response)=>{
         });
     }
        const {symbol,balance, decimals}= result.data;
+        //   let realbalncebeLike= balance*100
      const current = await prisma.asset.findUnique({
             where:{
                 user_symbol_unique:{
@@ -54,10 +52,10 @@ export const deposit=async (req:Request, res:Response)=>{
                  userId:user?.id,
                  symbol:symbol
             }},
-            update:{balance:currentBalance+balance},
+            update:{balance:currentBalance+balance}, // here you have to add realbalancebelike 
             create:{
                 symbol:symbol,
-                balance:balance,
+                balance:balance,      // balance : realbalancebeLike ok 
                 decimals:decimals,
                 userId:user?.id, 
             }
