@@ -13,11 +13,13 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@repo/db": "*",
     "@repo/redis": "*",
     "@types/node": "^25.6.0",
     "tsx": "^4.21.0"
   },
   "dependencies": {
+    "express": "^5.2.1",
     "ioredis": "^5.10.1"
   }
 }

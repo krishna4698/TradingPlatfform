@@ -2,29 +2,49 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { useAuth } from "../context/AuthProvider";
+import { Button } from "@repo/ui/button";
+import { logout } from "../hooks/useAuth";
+import toast from "react-hot-toast";
+
+
 
 const links = [
   { href: "/marketplace", label: "Markets" },
   { href: "/login", label: "Login" },
 ];
 
+
 export default function Header() {
   const [isOpen, setIsOpen] = useState(false);
   const closeMenu = () => setIsOpen(false);
+  const auth = useAuth()
+  const user = auth?.user;
+   
+  
+async function handleLogout(){
+
+        const result= await logout();
+        if(result){
+          auth?.setUser(null)
+          toast.success("logout");
+  
+        }
+}
 
   return (
     <header className="sticky top-0 z-40 mx-auto w-full max-w-7xl px-3 py-3 sm:px-5 lg:px-8">
       <div className="market-shell flex items-center justify-between px-3 py-3">
         <Link href="/" className="group flex items-center gap-3" onClick={closeMenu}>
           <span className="grid h-10 w-10 place-items-center bg-[var(--lime)] text-sm font-black text-black">
-            TP
+            100X
           </span>
           <span className="leading-none">
             <span className="mono-face block text-[0.64rem] uppercase tracking-[0.2em] text-stone-500">
-              market cockpit
+            
             </span>
             <span className="display-face block text-xl text-white group-hover:text-[var(--lime)]">
-              TradingPlatform
+              Trading
             </span>
           </span>
         </Link>
@@ -39,12 +59,20 @@ export default function Header() {
               {item.label}
             </Link>
           ))}
-          <Link
+          {!user ? (<Link
             href="/register"
             className="primary-action px-4 py-2 text-sm font-bold transition hover:translate-y-[-1px]"
           >
             Start
-          </Link>
+          </Link>):  (<div>
+            <button  className="bg- bg-red-500 px-4 py-2 text-sm font-bold transition hover:translate-y-[-1px]"
+            onClick={handleLogout}
+            >
+              Logout
+            </button>
+          </div>) }
+          
+          
         </nav>
 
         <button

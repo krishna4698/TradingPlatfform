@@ -15,7 +15,7 @@ export class RedisSubscriber {
   }
 
   async runLoop() {
-    // Keep the last seen stream id so xread does not skip messages after the first loop.
+  
     let lastId = "$";
 
     while (true) {
@@ -57,7 +57,7 @@ export class RedisSubscriber {
     }
   }
 
-  waitForMessage(callbackId: number) {
+  waitForMessage(callbackId: string) {  //callbackId is a orderId
     return new Promise<Record<string, string>>((resolve, reject) => {
       console.log(`[SUBSCRIBER] Waiting for callback id: ${callbackId}`);
       const callbackKey = String(callbackId);
@@ -69,11 +69,19 @@ export class RedisSubscriber {
         }
       }, 5000);
 
-      // Stream field values come back as strings, so the callback registry should use string keys too.
-      this.callbacks[callbackKey] = (data: Record<string, string>) => {
+      
+      this.callbacks[callbackKey] = (data: Record<string, string>) => {      
         clearTimeout(timer);
         resolve(data);
       };
     });
   }
 }
+   
+
+// this.callbacks = {
+//   "abc123": (data) => {
+//     clearTimeout(timer);    above will become as this okay
+//     resolve(data);
+//   }
+// }

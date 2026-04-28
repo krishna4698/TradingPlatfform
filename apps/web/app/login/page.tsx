@@ -19,7 +19,7 @@ export default function LoginPage() {
     if (result) {
       // await refreshUser();
       const next = new URLSearchParams(window.location.search).get("next") ?? "/marketplace";
-      router.push(next);
+      router.push("/marketplace");
     }
   };
 

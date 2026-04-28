@@ -171,6 +171,7 @@ export default function Chart({
       const now = Math.floor(Date.now() / 1000);
       return candlesService.getCandles(interval, now - 30 * 24 * 60 * 60, now, "BTCUSDC");
     },
+    refetchInterval:2000
   });
 
   const fetchedCandles = useMemo(
@@ -381,7 +382,7 @@ export default function Chart({
     <section className="flex min-h-[calc(100vh-11rem)] flex-col overflow-hidden rounded-lg border border-white/15 bg-black/20 shadow-inner lg:min-h-[31rem]">
       <div className="flex flex-col gap-2 border-b border-white/10 px-3 py-2 sm:flex-row sm:items-center sm:justify-between sm:px-4 sm:py-3">
         <div>
-          <p className="micro-label">BTC_USDC chart</p>
+          <p className="micro-label">BTC_USDC</p>
           <div className="mt-2 flex flex-wrap items-end gap-x-4 gap-y-1">
             <p className="mono-face text-xl font-black text-white sm:text-2xl">
               {latest ? `$${compactPriceFormatter.format(latest.close)}` : "--"}
@@ -393,13 +394,6 @@ export default function Chart({
         </div>
 
         <div className="flex flex-wrap items-center gap-2 sm:gap-3 sm:justify-end">
-          <button
-            type="button"
-            onClick={() => void refetch()}
-            className="secondary-action h-9 px-3 text-xs font-bold transition hover:border-white/25"
-          >
-            {isFetching ? "Refreshing" : "Refresh"}
-          </button>
           <div className="text-left sm:text-right">
             <p className={`mono-face text-xs font-bold ${isWsConnected ? "text-[var(--lime)]" : "text-[var(--loss)]"}`}>
               {isWsConnected ? "LIVE" : "OFFLINE"}

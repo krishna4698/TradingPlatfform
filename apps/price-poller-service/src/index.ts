@@ -31,6 +31,7 @@ ws.on("open", () => {
 ws.on("message", (message) =>{  
     try {
         const data = JSON.parse(message.toString());
+        // console.log("data from ws", data);
         redis.xadd("engine-stream", "*", "payload", JSON.stringify({ kind: "price-update", data }));
     } catch (e) {
         console.log("error is ", e);
