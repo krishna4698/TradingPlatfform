@@ -190,7 +190,7 @@ function getFieldValue(fields: string[], key: string) {
         "pnl", pnl.toString(),
         "status", "closed"
 
-      ).catch(err=>console.log(`failed to send to the callback-queue, the error is ${err}`))
+      ).catch((err: Error)=>console.log(`failed to send to the callback-queue, the error is ${err}`))
       return {liquidated:true, pnl, reason}
  }
 
