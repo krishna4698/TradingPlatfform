@@ -1,6 +1,8 @@
 import { NextFunction, Request, Response } from "express";
 import jwt, { JwtPayload } from "jsonwebtoken"
 
+const JWT_SECRET = process.env.JWT_SECRET ?? "secret";
+
 declare module "express-serve-static-core" {
     interface Request{
         user?:{
@@ -23,7 +25,7 @@ const authMiddleware= (req:Request, res:Response, next:NextFunction)=>{
 
    if(!token) return res.status(401).json({message:"unauthorized"})
 
-    const decoded= jwt.verify(token, "secret") as any
+    const decoded= jwt.verify(token, JWT_SECRET) as any
     if(!decoded) return res.status(401).json({message:"unauthorized"})
        req.user={
           id:decoded.id,
