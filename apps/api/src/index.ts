@@ -25,7 +25,7 @@ app.use(cookieParser())
 
 app.use(cors({
   origin: [
-    "https://your-frontend.vercel.app",
+    "https://trading-platfform-web.vercel.app",
     frontendUrl,
      "http://localhost:3000"
   ],
