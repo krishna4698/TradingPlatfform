@@ -10,7 +10,14 @@ type AuthTokenPayload = {
   email: string;
 };
 
-const JWT_SECRET = "secret";
+const JWT_SECRET = process.env.JWT_SECRET ?? "secret";
+const isProduction = process.env.NODE_ENV === "production";
+const cookieOptions = {
+  httpOnly: true,
+  secure: isProduction,
+  sameSite: isProduction ? "none" as const : "lax" as const,
+  path: "/",
+};
 
 const getCookieValue = (cookieHeader: string | undefined, name: string) => {
   if (!cookieHeader) return undefined;
@@ -87,9 +94,7 @@ export const login = async (req:Request, res:Response)=>{
            }, JWT_SECRET)
            
              res.cookie("token", token, {
-                 httpOnly: true,
-                 secure:false,
-                 sameSite:"lax",
+                 ...cookieOptions,
                  maxAge: 24 * 60 * 60 * 1000
 
              })
@@ -154,11 +159,7 @@ export const logout = (req: Request, res: Response) => {
   }
 
   res.clearCookie("token", {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: false,
-    path:"/"
-
+    ...cookieOptions
   });
 
   return res.status(200).json({ message: "logged out" });
