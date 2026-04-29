@@ -11,15 +11,15 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const router = useRouter();
-  // const { refreshUser } = useAuth();
+  const auth = useAuth();
 
   const onSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const result = await loginUser(email, password);
     if (result) {
-      // await refreshUser();
       const next = new URLSearchParams(window.location.search).get("next") ?? "/marketplace";
-      router.push("/marketplace");
+      await auth?.refreshUser();
+      router.replace(next);
     }
   };
 
