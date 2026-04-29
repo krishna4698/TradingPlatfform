@@ -4,7 +4,7 @@ import toast from "react-hot-toast";
 
 
 
-export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
+export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "tradingplatfform-production.up.railway.app"; // 3001
 
 export type CurrentUser = {
   id: string;
