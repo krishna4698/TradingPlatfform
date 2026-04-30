@@ -26,6 +26,7 @@ export default function Marketplace() {
   const [latestBtcPrice, setLatestBtcPrice] = useState<number | null>(null)
   const [mobileOrderSide, setMobileOrderSide] = useState<OrderSide | null>(null)
   const auth = useAuth();
+  const user= auth?.user;
    const router= useRouter();
  
   const {data: balance = 0, isLoading} = useQuery({
@@ -82,15 +83,15 @@ export default function Marketplace() {
               </span>
             </div>
 
-            <DepositModal />
-
-            <button
+             { user && <DepositModal />} 
+         {user && <button
               type="button"
               onClick={handleLogout}
               className="h-10 rounded-md border border-[var(--loss)]/45 bg-[var(--loss)]/12 px-3 text-xs font-black uppercase text-[var(--loss)] transition hover:bg-[var(--loss)]/18 lg:h-12 lg:w-28 lg:px-4 lg:text-sm"
             >
               Logout
-            </button>
+            </button>}
+            
           </div>
         </div>
         
