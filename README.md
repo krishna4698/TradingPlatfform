@@ -1,159 +1,358 @@
-# Turborepo starter
+# TradingPlatform
 
-This Turborepo starter is maintained by the Turborepo core team.
+TradingPlatform is a full-stack crypto trading simulator built as an npm/Turborepo monorepo. It includes a Next.js frontend, an Express API, a Redis-backed matching/position engine, a live price poller, and shared database/Redis/config packages.
 
-## Using this example
+The current product focuses on BTC/USDC trading. Users can register, log in, deposit USDC, view BTC market data, open long or short leveraged positions, set take-profit and stop-loss prices, close orders manually, and track order history and PnL.
 
-Run the following command:
+## Tech Stack
 
-```sh
-npx create-turbo@latest
+- **Monorepo:** Turborepo, npm workspaces
+- **Frontend:** Next.js 16, React 19, Tailwind CSS, TanStack Query, lightweight-charts
+- **API:** Express 5, Zod, JWT auth, bcrypt, cookie-based sessions
+- **Engine:** Node.js/TypeScript service consuming Redis streams
+- **Market data:** Backpack Exchange WebSocket and REST APIs
+- **Database:** PostgreSQL with Prisma
+- **Messaging:** Redis streams with ioredis
+- **Language:** TypeScript
+
+## Workspace Layout
+
+```text
+.
+|-- apps
+|   |-- api                  # Express HTTP API
+|   |-- engine               # Redis stream consumer and order/PnL engine
+|   |-- price-poller-service # Backpack WebSocket price feed -> Redis stream
+|   `-- web                  # Next.js frontend
+|-- packages
+|   |-- db                   # Prisma client, schema, migrations
+|   |-- redis                # Shared Redis client
+|   |-- ui                   # Shared React UI package
+|   |-- eslint-config        # Shared ESLint configs
+|   `-- typescript-config    # Shared TypeScript configs
+|-- package.json
+|-- turbo.json
+`-- README.md
 ```
 
-## What's inside?
+## How It Works
 
-This Turborepo includes the following packages/apps:
+The system is split into four main runtime services:
 
-### Apps and Packages
+1. **Web app** runs on `http://localhost:3000`.
+2. **API server** runs on `http://localhost:3001` by default and handles auth, balances, candles, and trade requests.
+3. **Price poller** connects to Backpack Exchange WebSocket market data and writes BTC/USDC price updates into the Redis `engine-stream` for now.
+4. **Engine** consumes `engine-stream`, maintains open orders in memory, persists order snapshots to PostgreSQL, updates balances, and writes responses to the Redis `callback-queue`.
 
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
+Order creation flow:
 
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
-
-### Utilities
-
-This Turborepo has some additional tools already setup for you:
-
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
-
-### Build
-
-To build all apps and packages, run the following command:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
-
-```sh
-cd my-turborepo
-turbo build
+```text
+Frontend -> API -> Redis engine-stream -> Engine -> PostgreSQL(like updation of balances ans pnl) -> Redis callback-queue -> API -> Frontend
 ```
 
-Without global `turbo`, use your package manager:
+The API waits briefly for an engine callback when opening or closing an order. This keeps the frontend response tied to the actual engine result instead of only confirming that a request was queued.
 
-```sh
-cd my-turborepo
-npx turbo build
-npm dlx turbo build
-npm exec turbo build
+## Features
+
+- User registration and login
+- JWT authentication stored in an HTTP-only cookie
+- Authenticated `/auth/me` session check
+- USDC balance deposit and balance polling
+- BTC/USDC chart data from Backpack candles
+- Live BTC price/order data through Backpack WebSocket usage in the app and poller
+- Long and short order creation
+- Leverage, quantity, take-profit, and stop-loss inputs
+- Manual order close
+- Engine-side balance deduction and crediting
+- PnL calculation
+- Automatic closure by take profit, stop loss, or liquidation checks
+- Order persistence and order history
+
+## Prerequisites
+
+Install these before running the project locally:
+
+- Node.js `>=18`
+- npm `10.9.7` or compatible
+- PostgreSQL database
+- Redis server
+
+The repository includes a `.nvmrc`, so if you use nvm you can run:
+
+```bash
+nvm use
 ```
 
-You can build a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
+## Environment Variables
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
+Create a `.env` file in the repository root. The shared database and Redis packages load environment variables from the root `.env`.
 
-```sh
-turbo build --filter=docs
+```env
+# PostgreSQL
+DATABASE_URL="postgresql://USER:PASSWORD@localhost:5432/trading_platform"
+
+# Redis
+REDIS_URL="redis://localhost:6379"
+# Or use these instead of REDIS_URL:
+# REDIS_HOST="127.0.0.1"
+# REDIS_PORT="6379"
+# REDIS_PASSWORD=""
+# REDIS_DB="0"
+
+# API
+PORT="3001"
+FRONTEND_URL="http://localhost:3000"
+JWT_SECRET="replace-this-with-a-strong-secret"
+
+# Web
+NEXT_PUBLIC_API_URL="http://localhost:3001"
 ```
 
-Without global `turbo`:
+Notes:
 
-```sh
-npx turbo build --filter=docs
-npm exec turbo build --filter=docs
-npm exec turbo build --filter=docs
+- `DATABASE_URL` is required by `packages/db`.
+- `REDIS_URL` is optional if you provide host/port values or run Redis locally on `127.0.0.1:6379`.
+- `JWT_SECRET` defaults to `secret` in code, but you should always set a real value.
+- In production, cookies are configured with `secure: true` and `sameSite: "none"` when `NODE_ENV=production`.
+
+## Installation
+
+Install all workspace dependencies from the repository root:
+
+```bash
+npm install
 ```
 
-### Develop
+Generate the Prisma client:
 
-To develop all apps and packages, run the following command:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
-
-```sh
-cd my-turborepo
-turbo dev
+```bash
+npm --workspace @repo/db run db:generate
 ```
 
-Without global `turbo`, use your package manager:
+Apply database migrations:
 
-```sh
-cd my-turborepo
-npx turbo dev
-npm exec turbo dev
-npm exec turbo dev
+```bash
+npm --workspace @repo/db run db:migrate
 ```
 
-You can develop a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
+For quick local schema sync without creating a migration, you can use:
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
-
-```sh
-turbo dev --filter=web
+```bash
+npm --workspace @repo/db run db:push
 ```
 
-Without global `turbo`:
+## Running Locally
 
-```sh
-npx turbo dev --filter=web
-npm exec turbo dev --filter=web
-npm exec turbo dev --filter=web
+Start PostgreSQL and Redis first.
+
+Then run the whole monorepo:
+
+```bash
+npm run dev
 ```
 
-### Remote Caching
+Because the services are persistent, Turborepo will run the available `dev` scripts together.
 
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
+You can also run services individually:
 
-Turborepo can use a technique known as [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
-
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
-
-```sh
-cd my-turborepo
-turbo login
+```bash
+npm --workspace web run dev
+npm --workspace api run dev
+npm --workspace engine run dev
+npm --workspace price-poller-service run dev
 ```
 
-Without global `turbo`, use your package manager:
+Local URLs:
 
-```sh
-cd my-turborepo
-npx turbo login
-npm exec turbo login
-npm exec turbo login
+- Web: `http://localhost:3000`
+- API: `http://localhost:3001`
+- API health check: `http://localhost:3001/health`
+
+Recommended startup order when running services manually:
+
+1. PostgreSQL
+2. Redis
+3. API
+4. Engine
+5. Price poller
+6. Web
+
+The engine needs Redis and PostgreSQL. The API also needs Redis and PostgreSQL. The price poller needs Redis and external network access to Backpack Exchange.
+
+## Scripts
+
+Root scripts:
+
+```bash
+npm run dev          # Run all workspace dev tasks through Turbo
+npm run build        # Build all workspaces
+npm run lint         # Run lint tasks
+npm run check-types  # Run type checks
+npm run format       # Format TypeScript, TSX, and Markdown files
 ```
 
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
+Database package scripts:
 
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
-
-```sh
-turbo link
+```bash
+npm --workspace @repo/db run db:generate
+npm --workspace @repo/db run db:migrate
+npm --workspace @repo/db run db:push
+npm --workspace @repo/db run db:studio
 ```
 
-Without global `turbo`:
+Service scripts:
 
-```sh
-npx turbo link
-npm exec turbo link
-npm exec turbo link
+```bash
+npm --workspace web run dev
+npm --workspace api run build
+npm --workspace api run start
+npm --workspace engine run build
+npm --workspace engine run start
+npm --workspace price-poller-service run build
+npm --workspace price-poller-service run start
 ```
 
-## Useful Links
+## API Overview
 
-Learn more about the power of Turborepo:
+Base URL in local development:
 
-- [Tasks](https://turborepo.dev/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.dev/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.dev/docs/reference/configuration)
-- [CLI Usage](https://turborepo.dev/docs/reference/command-line-reference)
+```text
+http://localhost:3001
+```
+
+Auth routes:
+
+- `POST /auth/register` - create a user
+- `POST /auth/login` - log in and set the `token` cookie
+- `GET /auth/me` - return the current user from the cookie
+- `POST /auth/logout` - clear the auth cookie
+
+Balance routes:
+
+- `GET /balance` - get authenticated user balances
+- `POST /balance/deposit` - deposit balance for the authenticated user
+
+Trade routes:
+
+- `POST /trade/open` - create an order through the engine
+- `POST /trade/close` - close an open order through the engine
+- `GET /trade/getorders` - list authenticated user orders
+
+Market data route:
+
+- `GET /getcandles` - fetch candles from Backpack Exchange
+
+Example candle query:
+
+```text
+/getcandles?asset=BTCUSDC&ts=1h
+```
+
+## Redis Streams
+
+The app uses Redis streams for asynchronous communication between the API, price poller, and engine.
+
+### `engine-stream`
+
+Consumed by `apps/engine`.
+
+Message examples:
+
+- `price-update` from the price poller
+- `create_order` from the API
+- `close-order` from the API
+
+### `callback-queue`
+
+Consumed by the API subscriber. The engine writes callbacks here so API requests can resolve with the final engine result.
+
+Common statuses include:
+
+- `created`
+- `insufficientBalance`
+- `priceNotReady`
+- `no order found`
+
+## Database Models
+
+Prisma models live in `packages/db/prisma/schema.prisma`.
+
+Main models:
+
+- `User` - stores account identity and password hash
+- `Asset` - stores user balances by symbol
+- `Order` - stores order status, side, PnL, leverage, quantity, opening/closing prices, and close reason
+
+Supported symbols in the current schema:
+
+- `USDC`
+- `BTC`
+
+Supported order sides:
+
+- `long`
+- `short`
+
+Supported order statuses:
+
+- `open`
+- `closed`
+
+Supported close reasons:
+
+- `TakeProfit`
+- `StopLoss`
+- `Manual`
+- `Liquidation`
+
+## Development Notes
+
+- The app currently centers on BTC/USDC.
+- The engine keeps open orders and balances in memory and also writes snapshots to PostgreSQL.
+- The engine reloads open orders and balances from the database on startup.
+- Order prices and PnL are stored in scaled integer form in PostgreSQL:
+  - prices/PnL use 4 decimals in many fields
+  - quantities use 2 decimals
+- The frontend polls balance and orders every 2 seconds through TanStack Query.
+- Backpack Exchange is used for both candle data and live price feed data.
+
+## Troubleshooting
+
+### `DATABASE_URL is not set`
+
+Add `DATABASE_URL` to the root `.env` file or to `packages/db/.env`.
+
+### Orders are rejected with `priceNotReady`
+
+Start the price poller and engine, then wait a few seconds for the first Backpack price update to enter Redis.
+
+### API request times out while creating or closing an order
+
+Make sure Redis is running and the engine service is consuming `engine-stream`.
+
+### Login works locally but cookies fail in production
+
+Check `FRONTEND_URL`, API CORS origins, HTTPS, and `NODE_ENV=production`. Production cookies are sent with `secure` and `sameSite: "none"`.
+
+### Candles fail to load
+
+The candle endpoint fetches data from Backpack Exchange. Confirm the API service has external network access and the requested asset/timeframe is supported.
+
+## Production Checklist
+
+- Set a strong `JWT_SECRET`
+- Use managed PostgreSQL and Redis instances
+- Set `DATABASE_URL` and `REDIS_URL`
+- Set `NEXT_PUBLIC_API_URL` to the deployed API URL
+- Set `FRONTEND_URL` to the deployed web URL
+- Run database migrations before starting services
+- Run the API, engine, and price poller as separate long-running processes
+- Configure CORS for the deployed frontend domain
+- Use HTTPS for frontend and API deployments
+
+## Current Limitations
+
+- Trading logic is simplified and intended for a simulated environment.
+- The active trading pair is BTC/USDC.
+- The engine is in-memory between database snapshots, so production scaling would need stronger coordination before running multiple engine instances.
+- There are placeholder `test` scripts in several packages, but no full automated test suite yet.
