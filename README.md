@@ -304,7 +304,7 @@ Supported close reasons:
 - `StopLoss`
 - `Manual`
 - `Liquidation`
-
+    
 ## Development Notes
 
 - The app currently centers on BTC/USDC.
