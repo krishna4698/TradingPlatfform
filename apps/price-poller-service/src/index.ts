@@ -11,7 +11,7 @@ redis.on("connect", () => {
 
 redis.on("error", (e: Error) => {
     console.log("error is :", e);
-});
+}); 
 
 ws.on("error", (e) => {
     console.log("websocket error is :", e);

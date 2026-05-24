@@ -61,7 +61,7 @@ function getFieldValue(fields: string[], key: string) {
   id: string,
   asset: string,
   newBalance: number
-) {
+) { 
   try{
     await prisma.asset.upsert({
     where: {
@@ -104,7 +104,7 @@ function getFieldValue(fields: string[], key: string) {
                 reason="takeprofit";
                 console.log(`takeprofit for ${order.id} and currentprice is${price} and takeprofitPrice is ${order.takeProfit}`)
                }
-            }
+            }  
    //SL
             if(!reason && order.stopLoss && order.stopLoss>0){
                if(
