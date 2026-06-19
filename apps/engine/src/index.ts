@@ -18,6 +18,7 @@ interface Order {
   takeProfit?: number;
   stopLoss?: number;
 }
+
 function safeNum(n: any, def = 0) {
   const v = Number(n);
   return Number.isFinite(v) ? v : def;
@@ -375,6 +376,20 @@ let lastId= "$"
               const askprice:any= askPrices[asset];
               const bidprice:any= bidPrices[asset];
               const openingPrice= side==="long"?askprice:bidprice;
+              const order :Order={
+                id,
+                userId:userid,
+                asset,
+                levrage,
+                status,
+                qty,
+                side,
+                stopLoss:stoploss,
+                takeProfit:takeprofit,
+                openingPrice,
+                createdAt:Date.now()
+              }
+              
 
               const balance= balances[userid] ?? 0;
               if(!openingPrice || openingPrice <= 0){
@@ -385,38 +400,66 @@ let lastId= "$"
 
               const margin = openingPrice * qty / (levrage || 1);
               // const margin = openingPrice * qty *100/ (levrage || 1); // it is good
-              if(balance>=margin){
-                  let newBalance=  balance-margin;
-                  setMemBalance(userid, newBalance)
-                  //  balances[userid]= newBalance;
-                   await updateBalanceInDatabase( userid, "USDC", newBalance)
-                  const order:Order={
-                id,
-                userId: userid, 
-                levrage,
-                status,
-                asset,  
-                qty,
-                side,
-                stopLoss: stoploss,
-                takeProfit: takeprofit,   
-                openingPrice,
-                createdAt:Date.now(),
 
-              }
-            
-              open_order.push(order);
+             
+                try{
+                  await prisma.$transaction(async (tx)=>{
+                      const updated= await tx.asset.updateMany({
+                        where:{
+                          userId:userid,
+                          symbol:"USDC",
+                          balance:{
+                            gte:margin,
+                          },
+
+                        },
+                        data:{
+                          balance:{
+                            decrement:margin
+                          }
+                        }
+                      });
+
+                      if(updated.count===0){
+                        throw new Error("Insufficient_Balance");
+                      }
+                      await tx.order.create({
+                        data:{
+                          id,
+                          userId:userid,
+                          side,
+                          status:"open",
+                          openingPrice:Math.round(openingPrice*10000),
+                          closingPrice:0,
+                          qty:Math.round(qty*100),
+                          leverage:levrage ||1,
+                          pnl:0,
+                          margin:Math.round(margin*100),
+                          takeProfit:takeprofit?Math.round(takeprofit*10000):null,
+                          stopLoss:stoploss?Math.round(stoploss*10000):null,
+
+                        }
+                      })
+                      
+                  })
+                  setMemBalance(userid, balance-margin)
+                  open_order.push(order);
               console.log(`order created for userid=${userid} for orderid=${id}` , order);
 
               // Send the order id back because the API is waiting on that id, not on userid.
               await client.xadd("callback-queue", "*", "id", String(id), "status", "created")
               break;
-            }
-            else{
-                console.log("insufficient balance for userid , margin , balance"  , {userid, margin, balance});
-                await client.xadd("callback-queue", "*", "id", String(id), "status", "insufficientBalance")
-            }
+                }
+                catch(error){
+                   const status= error instanceof Error &&
+                   error.message==="Insufficient_Balance"?"insufficient Balance":"database error"
+                   await client.xadd("callback-queue", 
+                    "*", 
+                    "id", String(id),
+                  "status",status)
                   break;
+                }
+                 
               }
 
               case "close-order":{
